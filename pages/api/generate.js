@@ -98,7 +98,12 @@ export default async function handler(req, res) {
     };
 
     const nameKey = findKey(rows[0], ["Name of the party", "Party Name", "Name"]);
-    const balanceKey = findKey(rows[0], ["Balance as per books", "Balance", "Closing Balance"]);
+    const balanceKey = findKey(rows[0], [
+      "Balance as per books",
+      "Balance",
+      "Closing Balance",
+      "Balance as on date",
+    ]);
 
     if (!nameKey || !balanceKey) {
       return res.status(400).json({
