@@ -5,15 +5,14 @@ import * as XLSX from "xlsx";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import JSZip from "jszip";
+import templates from "../../templates/config";
 
-// Next.js needs this off so formidable can read the raw multipart upload
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// Formats a number the Indian way: 1,23,45,678
 function indianFormat(num) {
   const n = Math.round(Number(num) || 0);
   const s = Math.abs(n).toString();
@@ -41,6 +40,20 @@ function safeFilename(name) {
     .replace(/\s+/g, "_");
 }
 
+// <input type="date"> gives YYYY-MM-DD; display it as DD-MM-YYYY in the letter.
+function formatDate(isoDate) {
+  if (!isoDate) return "";
+  const [y, m, d] = isoDate.split("-");
+  if (!y || !m || !d) return isoDate;
+  return `${d}-${m}-${y}`;
+}
+
+function getField(fields, key, fallback = "") {
+  const v = fields[key];
+  if (Array.isArray(v)) return v[0] ?? fallback;
+  return v ?? fallback;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Use POST with a file upload" });
@@ -48,7 +61,7 @@ export default async function handler(req, res) {
 
   try {
     const form = formidable({ multiples: false });
-    const [, files] = await form.parse(req);
+    const [fields, files] = await form.parse(req);
 
     const fileArr = files.file;
     const uploaded = Array.isArray(fileArr) ? fileArr[0] : fileArr;
@@ -56,12 +69,25 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "No file uploaded. Field name must be 'file'." });
     }
 
-    // 1. Read the uploaded Excel file
+    const templateId = getField(fields, "templateId", templates[0].id);
+    const clientName = getField(fields, "clientName");
+    const clientPan = getField(fields, "clientPan");
+    const clientGstin = getField(fields, "clientGstin");
+    const clientAddress = getField(fields, "clientAddress");
+    const auditPeriodStartRaw = getField(fields, "auditPeriodStart");
+    const auditPeriodEndRaw = getField(fields, "auditPeriodEnd");
+    const confirmationDateRaw = getField(fields, "confirmationDate");
+
+    const templateMeta = templates.find((t) => t.id === templateId) || templates[0];
+
     const workbook = XLSX.readFile(uploaded.filepath);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-    // Expect columns (case-insensitive match): "Name of the party", "Balance as per books"
+    if (rows.length === 0) {
+      return res.status(400).json({ error: "The uploaded sheet has no data rows." });
+    }
+
     const findKey = (row, candidates) => {
       const keys = Object.keys(row);
       for (const c of candidates) {
@@ -70,10 +96,6 @@ export default async function handler(req, res) {
       }
       return null;
     };
-
-    if (rows.length === 0) {
-      return res.status(400).json({ error: "The uploaded sheet has no data rows." });
-    }
 
     const nameKey = findKey(rows[0], ["Name of the party", "Party Name", "Name"]);
     const balanceKey = findKey(rows[0], ["Balance as per books", "Balance", "Closing Balance"]);
@@ -85,13 +107,21 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Load the docx template once
-    const templatePath = path.join(process.cwd(), "templates", "template.docx");
+    const templatePath = path.join(process.cwd(), "templates", templateMeta.file);
     const templateBuffer = fs.readFileSync(templatePath);
 
-    // 3. Generate a filled docx per row, add to zip
     const zip = new JSZip();
     let count = 0;
+
+    const sharedData = {
+      client_name: clientName,
+      client_pan: clientPan,
+      client_gstin: clientGstin,
+      client_address: clientAddress,
+      audit_period_start: formatDate(auditPeriodStartRaw),
+      audit_period_end: formatDate(auditPeriodEndRaw),
+      confirmation_date: formatDate(confirmationDateRaw),
+    };
 
     for (const row of rows) {
       const partyName = String(row[nameKey] || "").trim();
@@ -105,6 +135,7 @@ export default async function handler(req, res) {
       });
 
       doc.render({
+        ...sharedData,
         party_name: partyName,
         balance: indianFormat(balanceRaw),
       });
