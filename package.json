@@ -1,0 +1,20 @@
+{
+  "name": "balance-confirm-tool",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "docxtemplater": "^3.65.2",
+    "formidable": "^3.5.4",
+    "jszip": "^3.10.1",
+    "next": "^14.2.34",
+    "pizzip": "^3.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "xlsx": "^0.18.5"
+  }
+}
