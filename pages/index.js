@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
+import { FileText, Upload, Download, LayoutGrid } from "lucide-react";
 
 export default function Home() {
   const [file, setFile] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
   const [templatesList, setTemplatesList] = useState([]);
   const [templateId, setTemplateId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,6 +27,21 @@ export default function Home() {
       })
       .catch(() => {});
   }, []);
+
+  function handleDrag(e, active) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(active);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -77,162 +94,186 @@ export default function Home() {
     }
   }
 
-  const selectedTemplate = templatesList.find((t) => t.id === templateId);
-
   return (
     <>
       <Head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
         <title>KVA OPTIMUS</title>
       </Head>
 
       <div className="page">
-        <div className="blob blob-a" aria-hidden="true" />
-        <div className="blob blob-b" aria-hidden="true" />
+        <header className="topbar">
+          <div className="brand">
+            <div className="logoMark">
+              <LayoutGrid size={18} strokeWidth={2.2} />
+            </div>
+            <div>
+              <div className="brandTitle">KVA OPTIMUS</div>
+              <div className="brandSub">
+                / Trade Payables &amp; Receivables → Audit Confirmation Letters
+              </div>
+            </div>
+          </div>
+          <div className="tags">
+            <span className="tag tag-a">Payables</span>
+            <span className="tag tag-b">Receivables</span>
+          </div>
+        </header>
 
-        <main className="wrap">
-          <header className="mark">
-            <span className="mark-ink">KVA</span>
-            <span className="mark-grad">OPTIMUS</span>
-          </header>
-          <p className="eyebrow">balance confirmation engine</p>
-
-          <div className="card">
-            <p className="lede">
-              Pick a letter format, fill in the client &amp; audit details, drop
-              in your Excel file — get back a zip of ready-to-send Word
-              confirmations.
-            </p>
-
-            <form onSubmit={handleSubmit} className="form">
-              <fieldset className="group">
-                <legend className="badge">
-                  <span className="badge-num">01</span> Letter format
-                </legend>
-                <select
-                  value={templateId}
-                  onChange={(e) => setTemplateId(e.target.value)}
-                  className="input"
+        <main className="content">
+          <section className="step">
+            <div className="stepLabel">STEP 1 — SELECT LETTER FORMAT</div>
+            <div className="formatGrid">
+              {templatesList.map((t) => (
+                <button
+                  type="button"
+                  key={t.id}
+                  onClick={() => setTemplateId(t.id)}
+                  className={
+                    "formatCard" + (templateId === t.id ? " formatCard--active" : "")
+                  }
                 >
-                  {templatesList.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-                {selectedTemplate?.description && (
-                  <p className="hint">{selectedTemplate.description}</p>
-                )}
-              </fieldset>
+                  <div className="formatTop">
+                    <div className="formatIcon">
+                      <FileText size={20} strokeWidth={2} />
+                    </div>
+                    <span className="formatTag">
+                      {t.id.startsWith("payables") ? "Trade Payables" : "Trade Receivables"}
+                    </span>
+                  </div>
+                  <div className="formatName">{t.label}</div>
+                  <div className="formatDesc">{t.description}</div>
+                </button>
+              ))}
+            </div>
+          </section>
 
-              <fieldset className="group">
-                <legend className="badge">
-                  <span className="badge-num">02</span> Client details
-                </legend>
+          <section className="step">
+            <div className="stepLabel">STEP 2 — CLIENT (AUDITEE) DETAILS</div>
+            <div className="card">
+              <input
+                placeholder="Client name *"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                className="input"
+              />
+              <div className="row">
                 <input
-                  placeholder="Client name *"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
+                  placeholder="PAN / TAN"
+                  value={clientPan}
+                  onChange={(e) => setClientPan(e.target.value)}
                   className="input"
                 />
-                <div className="row">
-                  <input
-                    placeholder="PAN / TAN"
-                    value={clientPan}
-                    onChange={(e) => setClientPan(e.target.value)}
-                    className="input"
-                  />
-                  <input
-                    placeholder="GSTIN"
-                    value={clientGstin}
-                    onChange={(e) => setClientGstin(e.target.value)}
-                    className="input"
-                  />
-                </div>
-                <textarea
-                  placeholder="Registered address"
-                  value={clientAddress}
-                  onChange={(e) => setClientAddress(e.target.value)}
-                  className="input textarea"
+                <input
+                  placeholder="GSTIN"
+                  value={clientGstin}
+                  onChange={(e) => setClientGstin(e.target.value)}
+                  className="input"
                 />
-              </fieldset>
+              </div>
+              <textarea
+                placeholder="Registered address"
+                value={clientAddress}
+                onChange={(e) => setClientAddress(e.target.value)}
+                className="input textarea"
+              />
+            </div>
+          </section>
 
-              <fieldset className="group">
-                <legend className="badge">
-                  <span className="badge-num">03</span> Audit period &amp; date
-                </legend>
-                <div className="row">
-                  <label className="dateLabel">
-                    Period start
-                    <input
-                      type="date"
-                      value={auditPeriodStart}
-                      onChange={(e) => setAuditPeriodStart(e.target.value)}
-                      className="input"
-                    />
-                  </label>
-                  <label className="dateLabel">
-                    Period end
-                    <input
-                      type="date"
-                      value={auditPeriodEnd}
-                      onChange={(e) => setAuditPeriodEnd(e.target.value)}
-                      className="input"
-                    />
-                  </label>
-                </div>
+          <section className="step">
+            <div className="stepLabel">STEP 3 — AUDIT PERIOD &amp; CONFIRMATION DATE</div>
+            <div className="card">
+              <div className="row">
                 <label className="dateLabel">
-                  Confirmation date (as at) *
+                  Period start
                   <input
                     type="date"
-                    value={confirmationDate}
-                    onChange={(e) => setConfirmationDate(e.target.value)}
+                    value={auditPeriodStart}
+                    onChange={(e) => setAuditPeriodStart(e.target.value)}
                     className="input"
                   />
                 </label>
-              </fieldset>
-
-              <fieldset className="group">
-                <legend className="badge">
-                  <span className="badge-num">04</span> Upload file
-                </legend>
-                <div className="uploadRow">
+                <label className="dateLabel">
+                  Period end
                   <input
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={(e) => setFile(e.target.files[0])}
-                    className="input fileInput"
+                    type="date"
+                    value={auditPeriodEnd}
+                    onChange={(e) => setAuditPeriodEnd(e.target.value)}
+                    className="input"
                   />
-                  <a
-                    href="/Party_Balances_Template.xlsx"
-                    download
-                    className="pillLink"
-                  >
-                    Download template ↓
-                  </a>
-                </div>
-              </fieldset>
+                </label>
+              </div>
+              <label className="dateLabel">
+                Confirmation date (as at) *
+                <input
+                  type="date"
+                  value={confirmationDate}
+                  onChange={(e) => setConfirmationDate(e.target.value)}
+                  className="input"
+                />
+              </label>
+            </div>
+          </section>
 
-              <button type="submit" disabled={loading} className="submit">
-                {loading ? "Generating…" : "Generate confirmations →"}
-              </button>
-            </form>
+          <section className="step">
+            <div className="stepLabel">STEP 4 — UPLOAD PARTY &amp; BALANCE FILE</div>
+            <label
+              htmlFor="fileInput"
+              className={"dropzone" + (dragActive ? " dropzone--active" : "")}
+              onDragOver={(e) => handleDrag(e, true)}
+              onDragEnter={(e) => handleDrag(e, true)}
+              onDragLeave={(e) => handleDrag(e, false)}
+              onDrop={handleDrop}
+            >
+              <input
+                id="fileInput"
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={(e) => setFile(e.target.files[0])}
+                className="hiddenInput"
+              />
+              <div className="dropIcon">
+                <Upload size={22} strokeWidth={2} />
+              </div>
+              <div className="dropTitle">
+                {file ? file.name : "Drop your Excel file here"}
+              </div>
+              <div className="dropSub">
+                Must contain columns named <strong>Party Name</strong> and{" "}
+                <strong>Balance as on date</strong>
+              </div>
+              <div className="dropRow">
+                <span className="fileTag">.xlsx</span>
+                <span className="fileTag">.xls</span>
+                <span className="fileTag">.csv</span>
+              </div>
+              <a
+                href="/Party_Balances_Template.xlsx"
+                download
+                onClick={(e) => e.stopPropagation()}
+                className="downloadLink"
+              >
+                <Download size={13} strokeWidth={2.2} />
+                Download Excel template
+              </a>
+            </label>
+          </section>
 
-            {error && <p className="error">{error}</p>}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="submit"
+          >
+            {loading ? "Generating…" : "Generate Balance Confirmations"}
+          </button>
 
-            <p className="note">
-              Expected columns: <strong>Party Name</strong> and{" "}
-              <strong>Balance as on date</strong> (a few common variations are
-              matched automatically too).
-            </p>
-          </div>
-
-          <p className="footer">K.Vijayaraghavan and Associates LLP · Chartered Accountants</p>
+          {error && <p className="error">{error}</p>}
         </main>
       </div>
 
@@ -247,136 +288,165 @@ export default function Home() {
         }
         body {
           font-family: "Inter", system-ui, sans-serif;
-          color: #14121f;
+          background: #faf8f3;
         }
         :focus-visible {
-          outline: 2px solid #6c4cff;
+          outline: 2px solid #0f9d6c;
           outline-offset: 2px;
         }
       `}</style>
 
       <style jsx>{`
         .page {
-          position: relative;
           min-height: 100vh;
-          overflow: hidden;
-          background: #f5f3ff;
-          display: flex;
-          justify-content: center;
-          padding: 56px 20px 40px;
+          background: #faf8f3;
+          color: #1c1f1d;
         }
 
-        .blob {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(60px);
-          opacity: 0.55;
-          pointer-events: none;
-        }
-        .blob-a {
-          width: 380px;
-          height: 380px;
-          background: #22d3a6;
-          top: -140px;
-          left: -120px;
-        }
-        .blob-b {
-          width: 420px;
-          height: 420px;
-          background: #ff5fa0;
-          bottom: -180px;
-          right: -140px;
-          opacity: 0.4;
-        }
-
-        .wrap {
-          position: relative;
-          z-index: 1;
-          width: 100%;
-          max-width: 620px;
+        .topbar {
+          background: #fff;
+          border-bottom: 1px solid #eae6db;
+          padding: 18px 32px;
           display: flex;
-          flex-direction: column;
           align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 12px;
         }
-
-        .mark {
-          font-family: "Space Grotesk", sans-serif;
-          font-weight: 700;
-          font-size: clamp(34px, 6vw, 46px);
-          letter-spacing: -0.02em;
+        .brand {
           display: flex;
-          gap: 10px;
+          align-items: center;
+          gap: 12px;
         }
-        .mark-ink {
-          color: #14121f;
+        .logoMark {
+          width: 36px;
+          height: 36px;
+          border-radius: 9px;
+          background: #dff5ea;
+          color: #0b6b4c;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
         }
-        .mark-grad {
-          background: linear-gradient(90deg, #6c4cff, #ff5fa0);
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
+        .brandTitle {
+          font-weight: 700;
+          font-size: 17px;
+          letter-spacing: -0.01em;
         }
-
-        .eyebrow {
-          font-family: "IBM Plex Mono", monospace;
+        .brandSub {
+          font-size: 12.5px;
+          color: #8a8676;
+          margin-top: 1px;
+        }
+        .tags {
+          display: flex;
+          gap: 8px;
+        }
+        .tag {
           font-size: 12px;
           font-weight: 600;
-          letter-spacing: 0.14em;
+          padding: 5px 12px;
+          border-radius: 999px;
+        }
+        .tag-a {
+          background: #dff5ea;
+          color: #0b6b4c;
+        }
+        .tag-b {
+          background: #eef1e4;
+          color: #556b2f;
+        }
+
+        .content {
+          max-width: 760px;
+          margin: 0 auto;
+          padding: 36px 24px 60px;
+        }
+
+        .step {
+          margin-bottom: 30px;
+        }
+        .stepLabel {
+          font-size: 11.5px;
+          font-weight: 600;
+          letter-spacing: 0.06em;
+          color: #8a8676;
+          margin-bottom: 12px;
           text-transform: uppercase;
-          color: #6c4cff;
-          margin: 6px 0 28px;
         }
 
         .card {
-          width: 100%;
-          background: #ffffff;
-          border: 2.5px solid #14121f;
-          border-radius: 22px;
-          box-shadow: 8px 8px 0 #6c4cff;
-          padding: 32px 30px 28px;
-        }
-
-        .lede {
-          font-size: 14.5px;
-          line-height: 1.55;
-          color: #4a465c;
-          margin: 0 0 26px;
-        }
-
-        .form {
+          background: #fff;
+          border: 1px solid #eae6db;
+          border-radius: 14px;
+          padding: 20px;
           display: flex;
           flex-direction: column;
-          gap: 22px;
+          gap: 12px;
         }
 
-        .group {
-          border: none;
-          margin: 0;
-          padding: 0;
+        .formatGrid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 14px;
+        }
+        .formatCard {
+          text-align: left;
+          background: #fff;
+          border: 1.5px solid #eae6db;
+          border-radius: 14px;
+          padding: 18px;
+          cursor: pointer;
+          font-family: inherit;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .formatCard:hover {
+          border-color: #b9e3cd;
+        }
+        .formatCard--active {
+          border-color: #0f9d6c;
+          box-shadow: 0 0 0 1px #0f9d6c;
+        }
+        .formatTop {
           display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        .badge {
-          display: inline-flex;
           align-items: center;
-          gap: 8px;
-          font-family: "IBM Plex Mono", monospace;
-          font-size: 11.5px;
-          font-weight: 600;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: #14121f;
-          padding: 0;
-          margin-bottom: 2px;
+          justify-content: space-between;
+          margin-bottom: 12px;
         }
-        .badge-num {
-          background: #22d3a6;
-          color: #072e26;
+        .formatIcon {
+          width: 36px;
+          height: 36px;
+          border-radius: 9px;
+          background: #f3f1e8;
+          color: #556b2f;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .formatCard--active .formatIcon {
+          background: #dff5ea;
+          color: #0b6b4c;
+        }
+        .formatTag {
+          font-size: 10.5px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          color: #8a8676;
+          background: #f3f1e8;
+          padding: 3px 8px;
           border-radius: 999px;
-          padding: 2px 8px;
-          font-size: 11px;
+        }
+        .formatName {
+          font-weight: 600;
+          font-size: 14.5px;
+          margin-bottom: 4px;
+        }
+        .formatDesc {
+          font-size: 12.5px;
+          color: #8a8676;
+          line-height: 1.45;
         }
 
         .row {
@@ -389,143 +459,135 @@ export default function Home() {
 
         .input {
           width: 100%;
-          padding: 11px 13px;
-          border: 2px solid #e4e1f5;
-          border-radius: 12px;
+          padding: 10px 12px;
+          border: 1px solid #e2ddd0;
+          border-radius: 9px;
           font-size: 14px;
-          font-family: "Inter", sans-serif;
-          background: #fbfaff;
-          color: #14121f;
+          font-family: inherit;
+          background: #fdfcf9;
+          color: #1c1f1d;
           transition: border-color 0.15s ease;
         }
         .input::placeholder {
-          color: #9490ab;
+          color: #a6a294;
         }
         .input:focus {
-          border-color: #6c4cff;
+          border-color: #0f9d6c;
           outline: none;
         }
-
         .textarea {
-          min-height: 58px;
+          min-height: 56px;
           resize: vertical;
         }
-
         .dateLabel {
           flex: 1;
           display: flex;
           flex-direction: column;
           gap: 5px;
-          font-family: "IBM Plex Mono", monospace;
-          font-size: 11px;
-          color: #6a6580;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
+          font-size: 12px;
+          color: #6f6b5e;
         }
 
-        .uploadRow {
+        .dropzone {
+          display: block;
+          background: #fff;
+          border: 1.5px dashed #d9d3c2;
+          border-radius: 14px;
+          padding: 40px 20px;
+          text-align: center;
+          cursor: pointer;
+          transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .dropzone--active {
+          border-color: #0f9d6c;
+          background: #f5fbf8;
+        }
+        .hiddenInput {
+          display: none;
+        }
+        .dropIcon {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: #dff5ea;
+          color: #0b6b4c;
           display: flex;
           align-items: center;
-          gap: 10px;
-          flex-wrap: wrap;
+          justify-content: center;
+          margin: 0 auto 14px;
         }
-        .fileInput {
-          flex: 1;
-          min-width: 180px;
-          padding: 9px 10px;
-        }
-
-        .pillLink {
-          font-family: "IBM Plex Mono", monospace;
-          font-size: 12px;
+        .dropTitle {
           font-weight: 600;
-          white-space: nowrap;
-          background: #fff1f8;
-          color: #d6266f;
-          border: 2px solid #ff5fa0;
+          font-size: 15px;
+          margin-bottom: 4px;
+        }
+        .dropSub {
+          font-size: 12.5px;
+          color: #8a8676;
+          margin-bottom: 14px;
+        }
+        .dropRow {
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: 16px;
+        }
+        .fileTag {
+          font-size: 11px;
+          color: #8a8676;
+          background: #f3f1e8;
+          padding: 3px 9px;
           border-radius: 999px;
-          padding: 8px 14px;
+        }
+        .downloadLink {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12.5px;
+          font-weight: 600;
+          color: #0b6b4c;
           text-decoration: none;
-          transition: transform 0.12s ease, box-shadow 0.12s ease;
-          box-shadow: 3px 3px 0 #ff5fa0;
-        }
-        .pillLink:hover {
-          transform: translate(-1px, -1px);
-          box-shadow: 4px 4px 0 #ff5fa0;
-        }
-        .pillLink:active {
-          transform: translate(1px, 1px);
-          box-shadow: 1px 1px 0 #ff5fa0;
+          border-bottom: 1px solid #b9e3cd;
+          padding-bottom: 1px;
         }
 
         .submit {
-          margin-top: 4px;
+          width: 100%;
           padding: 14px 18px;
-          border: 2.5px solid #14121f;
-          border-radius: 14px;
-          background: #6c4cff;
+          border: none;
+          border-radius: 12px;
+          background: #0f9d6c;
           color: #fff;
-          font-family: "Space Grotesk", sans-serif;
-          font-size: 15.5px;
-          font-weight: 700;
+          font-family: inherit;
+          font-size: 15px;
+          font-weight: 600;
           cursor: pointer;
-          box-shadow: 5px 5px 0 #14121f;
-          transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+          transition: background 0.15s ease;
         }
         .submit:hover:not(:disabled) {
-          transform: translate(-2px, -2px);
-          box-shadow: 7px 7px 0 #14121f;
-        }
-        .submit:active:not(:disabled) {
-          transform: translate(1px, 1px);
-          box-shadow: 2px 2px 0 #14121f;
+          background: #0b6b4c;
         }
         .submit:disabled {
-          background: #b7abff;
+          background: #a9d9c4;
           cursor: not-allowed;
-          box-shadow: 5px 5px 0 #ded9ff;
-        }
-
-        .hint {
-          font-size: 12px;
-          color: #837f96;
-          margin: 0;
         }
 
         .error {
-          margin-top: 16px;
+          margin-top: 14px;
           font-size: 13.5px;
-          color: #c0392b;
-          background: #fdecea;
-          border: 1.5px solid #f3b9b3;
+          color: #b3261e;
+          background: #fbeceb;
+          border: 1px solid #f2c4c0;
           border-radius: 10px;
           padding: 10px 12px;
         }
 
-        .note {
-          margin-top: 20px;
-          font-size: 12.5px;
-          color: #6a6580;
-          background: #f6f4ff;
-          border-radius: 10px;
-          padding: 12px 14px;
-          line-height: 1.5;
-        }
-
-        .footer {
-          font-family: "IBM Plex Mono", monospace;
-          font-size: 11px;
-          color: #8b87a0;
-          margin-top: 22px;
-          letter-spacing: 0.02em;
-        }
-
-        @media (max-width: 480px) {
+        @media (max-width: 560px) {
           .row {
             flex-direction: column;
           }
-          .card {
-            padding: 26px 20px 22px;
+          .topbar {
+            padding: 16px 20px;
           }
         }
       `}</style>
