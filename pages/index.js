@@ -1,32 +1,5 @@
 import { useEffect, useState } from "react";
 
-function OptimusMark() {
-  return (
-    <svg
-      width="28"
-      height="28"
-      viewBox="0 0 28 28"
-      fill="none"
-      style={{ verticalAlign: "-6px", marginLeft: 6 }}
-      aria-hidden="true"
-    >
-      <path
-        d="M14 2 L25 8 V16 C25 21 20 25 14 26 C8 25 3 21 3 16 V8 Z"
-        fill="#0f9d6c"
-      />
-      <path
-        d="M14 2 L25 8 V16 C25 21 20 25 14 26 V2 Z"
-        fill="#0b6b4c"
-      />
-      <path
-        d="M14 6 L21 10 V15.5 C21 18.8 18 21.4 14 22.3 C10 21.4 7 18.8 7 15.5 V10 Z"
-        fill="#faf8f3"
-      />
-      <path d="M14 9 V19 M10.5 12.5 H17.5" stroke="#0b6b4c" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export default function Home() {
   const [file, setFile] = useState(null);
   const [templatesList, setTemplatesList] = useState([]);
@@ -106,10 +79,7 @@ export default function Home() {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <h1 style={styles.title}>
-          KVA OPTIMUS
-          <OptimusMark />
-        </h1>
+        <h1 style={styles.title}>KVA OPTIMUS</h1>
         <p style={styles.subtitle}>
           Fill in your client's details, choose a letter format, and upload
           your Excel file. You'll get back a zip with a Word balance
@@ -247,7 +217,7 @@ const styles = {
     border: "1px solid #eae6db",
     boxShadow: "0 2px 12px rgba(20, 20, 15, 0.06)",
   },
-  title: { fontSize: 22, marginBottom: 8, color: "#1c1f1d" },
+  title: { fontSize: 28, marginBottom: 8, color: "#1c1f1d" },
   subtitle: { fontSize: 14, color: "#6f6b5e", lineHeight: 1.5, marginBottom: 24 },
   form: { display: "flex", flexDirection: "column", gap: 10 },
   sectionLabel: {
